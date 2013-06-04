@@ -971,7 +971,7 @@ diff -urN asterisk-11.1.2/main/channel.c asterisk-11.1.2-opus/main/channel.c
  		/*! CELT supports crazy high sample rates */
 diff -urN asterisk-11.1.2/main/format.c asterisk-11.1.2-opus/main/format.c
 --- asterisk-11.1.2/main/format.c	2012-10-02 03:27:19.000000000 +0200
-+++ asterisk-11.1.2-opus/main/format.c	2013-05-24 16:40:08.144224360 +0200
++++ asterisk-11.1.2-opus/main/format.c	2013-06-04 17:20:35.935378513 +0200
 @@ -430,6 +430,9 @@
  	/*! SpeeX Wideband (16kHz) Free Compression */
  	case AST_FORMAT_SPEEX16:
@@ -1012,7 +1012,17 @@ diff -urN asterisk-11.1.2/main/format.c asterisk-11.1.2-opus/main/format.c
  
  	/*! JPEG Images */
  	case (1ULL << 16):
-@@ -1072,6 +1084,10 @@
+@@ -782,6 +794,9 @@
+ 			return samplerate;
+ 		}
+ 	}
++	/* Opus */
++	case AST_FORMAT_OPUS:
++		return 48000;
+ 	default:
+ 		return 8000;
+ 	}
+@@ -1072,6 +1087,10 @@
  	format_list_add_static(ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR48, 0), "slin48", 48000, "16 bit Signed Linear PCM (48kHz)", 960, 10, 70, 10, 20, AST_SMOOTHER_FLAG_BE, 0);/*!< Signed linear (48kHz) */
  	format_list_add_static(ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR96, 0), "slin96", 96000, "16 bit Signed Linear PCM (96kHz)", 1920, 10, 70, 10, 20, AST_SMOOTHER_FLAG_BE, 0);/*!< Signed linear (96kHz) */
  	format_list_add_static(ast_format_set(&tmpfmt, AST_FORMAT_SLINEAR192, 0), "slin192", 192000, "16 bit Signed Linear PCM (192kHz)", 3840, 10, 70, 10, 20, AST_SMOOTHER_FLAG_BE, 0);/*!< Signed linear (192kHz) */
