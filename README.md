@@ -1,4 +1,4 @@
-#Asterisk Opus/VP8 patch
+#Asterisk Opus patch
 =======================
 
 Since Opus cannot, as of now, be integrated in the Asterisk repositories (learn why in this [thread](http://lists.digium.com/pipermail/asterisk-dev/2013-May/060356.html)), we prepared a patch that adds support for Opus transcoding to [Asterisk 12.2.0](http://downloads.asterisk.org/pub/telephony/asterisk/releases/).
