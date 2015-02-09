@@ -147,8 +147,8 @@ diff -urN asterisk-11.1.2/channels/chan_sip.c asterisk-11.1.2-opus/channels/chan
  	if (fmt.cur_ms && (fmt.cur_ms < *min_packet_size))
 diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_opus.c
 --- asterisk-11.1.2/codecs/codec_opus.c	1970-01-01 01:00:00.000000000 +0100
-+++ asterisk-11.1.2-opus/codecs/codec_opus.c	2013-05-24 17:04:17.660896284 +0200
-@@ -0,0 +1,529 @@
++++ asterisk-11.1.2-opus/codecs/codec_opus.c	2015-02-09 15:06:10.276565261 +0100
+@@ -0,0 +1,538 @@
 +/*
 + * Asterisk -- An open source telephony toolkit.
 + *
@@ -204,6 +204,8 @@ diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_
 +#define	OPUS_SAMPLES	160
 +
 +#define USE_FEC			0
++
++#define DEFAULT_COMPLEXITY	4
 +
 +
 +/* Sample frame data */
@@ -262,6 +264,7 @@ diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_
 +	else if(sampling_rate == 48000)
 +		opus_encoder_ctl(opvt->opus, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND));
 +	opus_encoder_ctl(opvt->opus, OPUS_SET_INBAND_FEC(opvt->fec));
++	opus_encoder_ctl(opvt->opus, OPUS_SET_COMPLEXITY(DEFAULT_COMPLEXITY));
 +	opvt->framesize = sampling_rate/50;
 +	opvt->id = ++encid;
 +	if(opusdebug)
@@ -360,28 +363,34 @@ diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_
 +	int datalen = 0;	/* output bytes */
 +	int samples = 0;	/* output samples */
 +
-+	/* Encode 160 samples (or more if it's not narrowband) */
-+	if(opusdebug > 1)
-+		ast_verbose("[Opus] [Encoder #%d (%d)] %d samples, %d bytes\n", opvt->id, opvt->sampling_rate, opvt->framesize, opvt->framesize*2);
-+	datalen = opus_encode(opvt->opus, opvt->buf, opvt->framesize, pvt->outbuf.uc, BUFFER_SAMPLES);
-+	if(datalen < 0) {
-+		if(opusdebug)
-+			ast_verbose("[Opus] Ops! got an error encoding the Opus frame: %d (%s)\n", datalen, opus_strerror(datalen));
-+		return NULL;
++	while(pvt->samples >= opvt->framesize) {
++		/* Encode 160 samples (or more if it's not narrowband) */
++		if(opusdebug > 1)
++			ast_verbose("[Opus] [Encoder #%d (%d)] %d samples, %d bytes\n", opvt->id, opvt->sampling_rate, opvt->framesize, opvt->framesize*2);
++		datalen = opus_encode(opvt->opus, opvt->buf, opvt->framesize, pvt->outbuf.uc, BUFFER_SAMPLES);
++		if(datalen < 0) {
++			if(opusdebug)
++				ast_verbose("[Opus] Ops! got an error encoding the Opus frame: %d (%s)\n", datalen, opus_strerror(datalen));
++			return NULL;
++		}
++		samples += opvt->framesize;
++		pvt->samples -= opvt->framesize;
++		/* Move the data at the end of the buffer to the front */
++		if (pvt->samples)
++			memmove(opvt->buf, opvt->buf + samples, pvt->samples * 2);
++
++		if(opusdebug > 1)
++			ast_verbose("[Opus] [Encoder #%d (%d)]   >> Got %d samples, %d bytes\n", opvt->id, opvt->sampling_rate, opvt->multiplier*samples, datalen);
++
++		if(opvt->file)
++			fwrite(opvt->buf, sizeof(int16_t), opvt->multiplier*samples, opvt->file);
 +	}
-+	samples += opvt->framesize;
-+	pvt->samples -= opvt->framesize;
-+	/* Move the data at the end of the buffer to the front */
-+	if (pvt->samples)
-+		memmove(opvt->buf, opvt->buf + samples, pvt->samples * 2);
-+
-+	if(opusdebug > 1)
-+		ast_verbose("[Opus] [Encoder #%d (%d)]   >> Got %d samples, %d bytes\n", opvt->id, opvt->sampling_rate, opvt->multiplier*samples, datalen);
-+
-+	if(opvt->file)
-+		fwrite(opvt->buf, sizeof(int16_t), opvt->multiplier*samples, opvt->file);
 +	
-+	return ast_trans_frameout(pvt, datalen, opvt->multiplier*samples);
++	/* Move the data at the end of the buffer to the front */
++	if(pvt->samples)
++		memmove(opvt->buf, opvt->buf+samples, pvt->samples*2);
++
++	return ast_trans_frameout(pvt, datalen, opvt->multiplier*samples);	
 +}
 +
 +static int opustolin_framein(struct ast_trans_pvt *pvt, struct ast_frame *f) {
@@ -596,7 +605,7 @@ diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_
 +
 +/* Configuration and module setup */
 +static int parse_config(int reload) {
-+	/* TODO: place stuff to negotiate/enforce here */
++	// TODO
 +	return 0;
 +}
 +
