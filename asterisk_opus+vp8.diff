@@ -147,8 +147,8 @@ diff -urN asterisk-11.1.2/channels/chan_sip.c asterisk-11.1.2-opus/channels/chan
  	if (fmt.cur_ms && (fmt.cur_ms < *min_packet_size))
 diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_opus.c
 --- asterisk-11.1.2/codecs/codec_opus.c	1970-01-01 01:00:00.000000000 +0100
-+++ asterisk-11.1.2-opus/codecs/codec_opus.c	2015-02-09 15:06:10.276565261 +0100
-@@ -0,0 +1,538 @@
++++ asterisk-11.1.2-opus/codecs/codec_opus.c	2015-02-13 12:59:46.395779315 +0100
+@@ -0,0 +1,539 @@
 +/*
 + * Asterisk -- An open source telephony toolkit.
 + *
@@ -367,12 +367,13 @@ diff -urN asterisk-11.1.2/codecs/codec_opus.c asterisk-11.1.2-opus/codecs/codec_
 +		/* Encode 160 samples (or more if it's not narrowband) */
 +		if(opusdebug > 1)
 +			ast_verbose("[Opus] [Encoder #%d (%d)] %d samples, %d bytes\n", opvt->id, opvt->sampling_rate, opvt->framesize, opvt->framesize*2);
-+		datalen = opus_encode(opvt->opus, opvt->buf, opvt->framesize, pvt->outbuf.uc, BUFFER_SAMPLES);
-+		if(datalen < 0) {
++		int len = opus_encode(opvt->opus, opvt->buf, opvt->framesize, pvt->outbuf.uc, BUFFER_SAMPLES);
++		if(len < 0) {
 +			if(opusdebug)
-+				ast_verbose("[Opus] Ops! got an error encoding the Opus frame: %d (%s)\n", datalen, opus_strerror(datalen));
++				ast_verbose("[Opus] Ops! got an error encoding the Opus frame: %d (%s)\n", len, opus_strerror(len));
 +			return NULL;
 +		}
++		datalen += len;
 +		samples += opvt->framesize;
 +		pvt->samples -= opvt->framesize;
 +		/* Move the data at the end of the buffer to the front */
